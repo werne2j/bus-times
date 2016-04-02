@@ -1,0 +1,4 @@
+*.pyc
+vagrant-expert
+settings.py
+.DS_Store

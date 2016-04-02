@@ -1,0 +1,556 @@
+{% load static from staticfiles %}
+
+<!DOCTYPE html> 
+<html>
+	<head>
+		<title>Bus Times</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, maximum-scale=1.0" />
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no, maximum-scale=1" media="(device-height: 568px)" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
+        <link rel="apple-touch-icon" sizes="60x60" href="{% static 'icons/apple-touch-icon-60x60.png' %}" />
+        <link rel="apple-touch-icon" sizes="76x76" href="{% static 'icons/apple-touch-icon-76x76.png' %}" />
+        <link rel="apple-touch-icon" sizes="120x120" href="{% static 'icons/apple-touch-icon-120x120.png' %}" />
+        <link rel="apple-touch-icon" sizes="152x152" href="{% static 'icons/apple-touch-icon-152x152.png' %}" /> 
+
+		<link rel="stylesheet" href="{% static 'css/jquery.mobile-1.3.2.min.css' %}" />
+		<link rel="stylesheet" href="{% static 'themes/csstest.min.css' %}" />
+		<link rel="stylesheet" href="{% static 'css/shuttle.css' %}" />
+
+		<!-- iPhone/iPod -->
+        <link rel="apple-touch-startup-image" href="{% static 'startup/startup.png' %}" media="screen and (device-height: 480px)">
+        <link rel="apple-touch-startup-image" href="{% static 'startup/startup-retina.png' %}" media="screen and (device-height: 480px) and (min-device-pixel-ratio: 2)">
+        <link rel="apple-touch-startup-image" href="{% static 'startup/startup-568h-retina.png' %}" media="screen and (device-height: 568px)">
+        <!-- iPad Landscape -->
+		<link rel="apple-touch-startup-image" sizes="1024x748" href="{% static 'startup/startup-ipad-landscape.png' %}" 
+			media="screen and (min-device-width: 481px) and (max-device-width: 1024px) and (orientation:landscape) and (-webkit-min-device-pixel-ratio: 1)" />
+		<!-- iPad Landscape Retina -->
+		<link rel="apple-touch-startup-image" sizes="2048x1496" href="{% static 'startup/startup-ipad-landscape-retina3.png' %}" 
+			media="screen and (min-device-width: 481px) and (max-device-width: 1024px) and (orientation:landscape) and (-webkit-min-device-pixel-ratio: 2)" />
+		<!-- iPad Portrait -->
+        <link rel="apple-touch-startup-image" href="{% static 'startup/startup-ipad-portrait.png' %}" 
+        	media="screen and (min-device-width: 481px) and (max-device-width: 1024px) and (orientation:portrait)">
+        <!-- iPad Portrait Retina -->
+        <link rel="apple-touch-startup-image" href="{% static 'startup/startup-ipad-portrait-retina.png' %}" 
+        	media="screen and (min-device-width: 481px) and (max-device-width: 1024px) and (orientation:portrait) and (min-device-pixel-ratio: 2)">
+    
+        <script src="{% static 'js/jquery-1.9.1.js' %}"></script>
+		<script src="{% static 'js/jquery.mobile-1.3.1.min.js' %}"></script>
+		<script type="text/javascript" src="{% static 'js/maps.google.js' %}"></script> 
+		<script src="{% static 'js/moment.js' %}"></script>
+
+
+		<script>
+		var orientation = window.orientation;
+		var address = document.location.pathname;
+
+		window.addEventListener('DOMContentLoaded', handleOrientation, false);
+		window.addEventListener('orientationchange', handleOrientation, false);
+			function handleOrientation() {
+			if (orientation == 0) {
+			  $("body").removeClass("landscape");
+			}
+			else if (orientation == 90) {
+			  $("body").addClass("landscape");
+			}
+			else if (orientation == -90) {
+			  $("body").addClass("landscape");
+			}
+			else if (orientation == 180) {
+			  $("body").removeClass("landscape");
+			}
+		};
+
+		if (window.navigator.userAgent.match(/iPhone|iPod/i)) {
+                if (window.navigator.standalone == true) {
+                    document.location.href = '#';
+                }else{
+                    document.location.href = '#add-to-home';
+                }
+        } else {
+                document.location.href;
+        };
+
+		$(document).on("pageinit", "#map", function() {
+            initialize();
+        });
+
+        function initialize() 
+        {
+            var mapCenter = new google.maps.LatLng(43.585,-84.759);
+
+			var blueImage = "{% static 'img/0000FF.png' %}"
+          	var greenImage = "{% static 'img/008000.png' %}"
+          	var maroonImage = "{% static 'img/800000.png' %}"
+          	var goldImage = "{% static 'img/FFD700.png' %}"
+
+            var myOptions = {
+            	zoom: 12,
+			    center: mapCenter,
+			    panControl: false,
+			    streetViewControl: false,
+			    zoomControl: true,
+			    scaleControl: false,
+			    zoomControlOptions: {
+			        style: google.maps.ZoomControlStyle.DEFAULT,
+			        position: google.maps.ControlPosition.LEFT_BOTTOM
+			    },
+			    mapTypeId: google.maps.MapTypeId.ROADMAP
+            }
+
+            map = new google.maps.Map(document.getElementById("mapcanvas"), myOptions);
+
+          	{% for marker in data %}
+			    var stop_{{marker.0}} = new google.maps.LatLng('{{marker.7}}', '{{marker.8}}')
+			    var infowindow_{{marker.0}} = new google.maps.InfoWindow({
+		      		content: "<h4>{{marker.2}}</h4> <p> {% if marker.1 = '1'%} Deerfield {% endif %} {% if marker.1 = '2'%} Broomfield {% endif %} {% if marker.1 = '3'%} Maroon {% endif %} {% if marker.1 = '4'%} Gold {% endif %}</p> <p> {% if marker.5 = '1' %} Bus Stop {% endif %} {% if marker.5 = '2' %} Apartment {% endif %} {% if marker.5 = '3' %} Request Stop ($1.00) {% endif %} {% if marker.5 = '4' %} Request Stop ($2.00) {% endif %}</p>"
+		 		});
+			    var marker_{{marker.0}} = new google.maps.Marker({
+			        position: stop_{{marker.0}},
+			        icon: {% if marker.1 = '1' %} greenImage, {% endif %}
+			        	  {% if marker.1 = '2' %} blueImage, {% endif %}
+			        	  {% if marker.1 = '3' %} maroonImage, {% endif %}
+			        	  {% if marker.1 = '4' %} goldImage, {% endif %}
+			        map: map,
+			    });
+
+			    google.maps.event.addListener(marker_{{marker.0}}, 'click', function() {
+			      infowindow_{{marker.0}}.open(map,marker_{{marker.0}});
+			    });
+			{% endfor %}
+
+        };
+
+		</script>
+
+		<script>
+		$(function() {
+
+		  $(document).delegate('#stop-near', 'click', function() {
+		    // copy list
+		    var list = $('.closest-stops').clone();
+		    
+		    // sort list
+		    reOrder(list.find('li'), $('ul.list-sorted'));
+		  });
+		});
+
+		var geodata;
+
+		if (navigator.geolocation) {
+			navigator.geolocation.getCurrentPosition(success, error);
+		}
+
+		function error(msg) {  
+		  // console.log(msg);
+		  $('.list-sorted').hide();
+		}
+
+		function success(position) {
+			$('.closest-stops').hide();
+			geodata = position.coords;
+
+			var latitude = geodata.latitude;
+			var longitude = geodata.longitude;
+
+			{% for stop in data %}
+			var stopLat = {{stop.7}};
+			var stopLong = {{stop.8}};
+
+			d = getDistance(latitude, stopLat, longitude, stopLong);
+			mi = (Math.floor((d*0.621371) * 100)/100);
+
+			$("#{{stop.0}}").attr("data-distance", d);
+
+			$("#{{stop.0}} span").text(mi + " Mi");
+
+
+			{% endfor %}
+
+
+
+		}	
+
+		function getDistance(lat1, lat2, lon1, lon2) {
+			  var R = 6371, // km
+		      dLat = (lat2-lat1).toRad(),
+		      dLon = (lon2-lon1).toRad();
+		  
+		  lat1 = parseFloat(lat1).toRad();
+		  lat2 = parseFloat(lat2).toRad();
+
+		  var a = Math.sin(dLat/2) * Math.sin(dLat/2) +      
+		          Math.sin(dLon/2) * Math.sin(dLon/2) *
+		          Math.cos(lat1) * Math.cos(lat2),
+		      c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)),
+		      d = R * c;
+		  return d;
+		}
+
+		Number.prototype.toRad = function() {
+   			return this * Math.PI / 180;
+  		};
+
+  		function reOrder(listOriginal, listClone) {
+  			$(listClone).empty();
+  			$(listOriginal).sort(sortAlpha).appendTo(listClone);
+		}
+
+		function sortAlpha(a, b) {
+		  return $(a).data('distance') > $(b).data('distance') ? 1 : -1;
+		}
+
+		</script>
+
+	</head>
+
+	<body>
+		<div data-role="page" id="main">
+			<div data-role="header" data-theme="a" data-position="fixed">
+				<h1>Bus Times</h1>
+			</div>
+			<div data-role="content">
+				<ul data-role="listview" id="searchList" data-filter="true" data-filter-reveal="true" data-filter-placeholder="Search stops...">
+					{% for stop in data %}
+						<li {% if stop.6 = '2' %}data-icon="false"{% endif %}>
+							{% if stop.6 = '2'%}	
+							{% else %}
+								<a href="#stop{{ stop.0 }}" data-transition="slide">
+							{% endif %}
+							{% if stop.1 = '1' %}<img src="{% static 'img/008000.png' %}" class="ui-li-icon">{% endif %}
+							{% if stop.1 = '2' %}<img src="{% static 'img/0000FF.png' %}" class="ui-li-icon">{% endif %}
+							{% if stop.1 = '3' %}<img src="{% static 'img/800000.png' %}" class="ui-li-icon">{% endif %}
+							{% if stop.1 = '4' %}<img src="{% static 'img/FFD700.png' %}" class="ui-li-icon">{% endif %}
+							{{stop.2}}
+							{% if stop.6 = '2' %}<span class="ui-li-count">Upon Request</span>{% endif %}</a></li>
+					{% endfor %}
+				</ul>
+				<ul data-role="listview" data-inset="false">
+					<li data-role="list-divider">Shuttles</li>
+		    		<li><a href="#deerfield" data-transition="slide">Deerfield</a></li>
+		    		<li><a href="#broomfield" data-transition="slide">Broomfield</a></li>
+		    		<li><a href="#maroon" data-transition="slide">Maroon</a></li>
+		    		<li><a href="#gold" data-transition="slide">Gold</a></li>
+		    		<li data-role="list-divider">Map/Location</li>
+		    		<li><a href="#map" data-transition="slide">Map of Stops</a></li>
+		    		<li id="stop-near"><a href="#closest" data-transition="slide">Closest Stop to Me</a></li>
+		    		<li data-role="list-divider">Contact Info</li>
+		    		<li data-icon="false"><a href="tel:1-989-772-9441">Call for Pickup!</a></li>
+		    		<li data-icon="false"><a href="mailto:info@ictcbus.com" rel="external">Email ICTC!</a></li>
+				</ul>
+			</div>
+		</div>
+
+		<!-- start of deerfield page -->
+		<div data-role="page" id="deerfield">
+			<div data-role="header" data-theme="a" class="ui-icon-alt"> 
+				<a href="#main" data-icon="home" class="ui-btn-right" class="ui-icon-nodisc">Home</a>
+				<h1>Bus Times</h1>
+			</div>
+
+			<div data-role="content">
+				<ul data-role="listview">
+					<li>
+					<h2>Icon Legend</h2>
+			        <p><strong>Automatic Stops</strong></p>
+			        <p><img src="{% static 'img/yellow_triangle.png' %}"> Bus Stops <img src="{% static 'img/house.png' %}"> Apartment Bus Stops</p>
+			        <p><strong>Request Stops</strong></p>
+			        <p><img src="{% static 'img/circle.png' %}"> $2.00 <img src="{% static 'img/triangle.png' %}"> $1.00 </p>
+			   		</li>
+					<li data-role="list-divider">Deerfield</li>
+					{% for stop in data %}
+						{% if stop.1 = '1' %}
+							<li><a href="#stop{{ stop.0 }}" data-transition="slide">
+								{% if stop.5 = '1' %}<img src="{% static 'img/yellow_triangle.png' %}" class="ui-li-icon">{% endif %}
+								{% if stop.5 = '2' %}<img src="{% static 'img/house.png' %}" class="ui-li-icon">{% endif %}
+								{% if stop.5 = '3' %}<img src="{% static 'img/triangle.png' %}" class="ui-li-icon">{% endif %}
+								{% if stop.5 = '4' %}<img src="{% static 'img/circle.png' %}" class="ui-li-icon">{% endif %}
+								{{ stop.2 }}</a></li>
+						{% endif %}
+					{% endfor %}
+				</ul>
+		    </div>        
+
+			<div data-role="footer" data-id="foo1" data-position="fixed">
+				<div data-role="navbar">
+					<ul>
+						<li><a href="#broomfield">Broomfield</a></li>
+						<li><a href="#maroon">Maroon</a></li>
+						<li><a href="#gold">Gold</a></li>
+					</ul>
+				</div><!-- /navbar -->
+			</div><!-- /footer -->
+		</div>
+
+		<!-- start of broomfield page -->
+		<div data-role="page" id="broomfield">
+			<div data-role="header" data-theme="a" data-position="fixed" class="ui-icon-alt">
+				<a href="#main" data-icon="home" class="ui-btn-right">Home</a>
+				<h1>Bus Times</h1>
+			</div>
+
+			<div data-role="content">
+				<ul data-role="listview">
+					<li>
+					<h2>Icon Legend</h2>
+			        <p><strong>Automatic Stops</strong></p>
+			        <p><img src="{% static 'img/yellow_triangle.png' %}"> Bus Stops <img src="{% static 'img/house.png' %}"> Apartment Bus Stops</p>
+			        <p><strong>Request Stops</strong></p>
+			        <p><img src="{% static 'img/circle.png' %}"> $2.00 <img src="{% static 'img/triangle.png' %}"> $1.00 </p>
+			   		</li>
+					<li data-role="list-divider">Broomfield </li>
+					{% for stop in data %}
+						{% if stop.1 = '2' %}
+							<li><a href="#stop{{ stop.0 }}" data-transition="slide">
+								{% if stop.5 = '1' %}<img src="{% static 'img/yellow_triangle.png' %}" class="ui-li-icon">{% endif %}
+								{% if stop.5 = '2' %}<img src="{% static 'img/house.png' %}" class="ui-li-icon">{% endif %}
+								{% if stop.5 = '3' %}<img src="{% static 'img/triangle.png' %}" class="ui-li-icon">{% endif %}
+								{% if stop.5 = '4' %}<img src="{% static 'img/circle.png' %}" class="ui-li-icon">{% endif %}
+								{{ stop.2 }}</a></li>
+						{% endif %}
+					{% endfor %}
+				</ul>
+			</div>
+
+			<div data-role="footer" data-id="foo1" data-position="fixed">
+				<div data-role="navbar">
+					<ul>
+						<li><a href="#deerfield">Deerfield</a></li>
+						<li><a href="#maroon">Maroon</a></li>
+						<li><a href="#gold">Gold</a></li>
+					</ul>
+				</div><!-- /navbar -->
+			</div><!-- /footer -->
+		</div>
+
+		<!-- start of maroon page -->
+		<div data-role="page" id="maroon">
+			<div data-role="header" data-theme="a" data-position="fixed" class="ui-icon-alt">
+				<a href="#main" data-icon="home" class="ui-btn-right">Home</a>
+				<h1>Bus Times</h1>
+			</div>
+
+			<div data-role="content">
+				<ul data-role="listview">
+					<li>
+					<h2>Icon Legend</h2>
+			        <p><strong>Automatic Stops</strong></p>
+			        <p><img src="{% static 'img/yellow_triangle.png' %}"> Bus Stops <img src="{% static 'img/house.png' %}"> Apartment Bus Stops</p>
+			        <p><strong>Request Stops</strong></p>
+			        <p><img src="{% static 'img/circle.png' %}"> $2.00 <img src="{% static 'img/triangle.png' %}"> $1.00 </p>
+			   		</li>
+					<li data-role="list-divider">Maroon </li>
+					{% for stop in data %}
+						{% if stop.1 = '3' %}
+							<li {% if stop.6 = '2' %}data-icon="false"{% endif %}>
+								{% if stop.6 = '2'%}
+									
+								{% else %}
+									<a href="#stop{{ stop.0 }}" data-transition="slide">
+								{% endif %}
+								{% if stop.5 = '1' %}<img src="{% static 'img/yellow_triangle.png' %}" class="ui-li-icon">{% endif %}
+								{% if stop.5 = '2' %}<img src="{% static 'img/house.png' %}" class="ui-li-icon">{% endif %}
+								{% if stop.5 = '3' %}<img src="{% static 'img/triangle.png' %}" class="ui-li-icon">{% endif %}
+								{% if stop.5 = '4' %}<img src="{% static 'img/circle.png' %}" class="ui-li-icon">{% endif %}
+								{{ stop.2 }}{% if stop.6 = '2' %}<span class="ui-li-count">Upon Request</span>{% endif %}</a></li>
+						{% endif %}
+					{% endfor %}
+				</ul>
+			</div>
+
+			<div data-role="footer" data-id="foo1" data-position="fixed">
+				<div data-role="navbar">
+					<ul>
+						<li><a href="#deerfield" >Deerfield</a></li>
+						<li><a href="#broomfield">Broomfield</a></li>
+						<li><a href="#gold">Gold</a></li>
+					</ul>
+				</div><!-- /navbar -->
+			</div><!-- /footer -->
+		</div>
+
+		<!-- start of gold page -->
+		<div data-role="page" id="gold">
+			<div data-role="header" data-theme="a" data-position="fixed" class="ui-icon-alt">
+				<a href="#main" data-icon="home" class="ui-btn-right">Home</a>
+				<h1>Bus Times</h1>
+			</div>
+
+			<div data-role="content">
+				<ul data-role="listview">
+					<li>
+					<h2>Icon Legend</h2>
+			        <p><strong>Automatic Stops</strong></p>
+			        <p><img src="{% static 'img/yellow_triangle.png' %}"> Bus Stops <img src="{% static 'img/house.png' %}"> Apartment Bus Stops</p>
+			        <p><strong>Request Stops</strong></p>
+			        <p><img src="{% static 'img/circle.png' %}"> $2.00 <img src="{% static 'img/triangle.png' %}"> $1.00 </p>
+			   		</li>
+					<li data-role="list-divider">Gold</li>
+					{% for stop in data %}
+						{% if stop.1 = '4' %}
+							<li><a href="#stop{{ stop.0 }}" data-transition="slide">
+								{% if stop.5 = '1' %}<img src="{% static 'img/yellow_triangle.png' %}" class="ui-li-icon">{% endif %}
+								{% if stop.5 = '2' %}<img src="{% static 'img/house.png' %}" class="ui-li-icon">{% endif %}
+								{% if stop.5 = '3' %}<img src="{% static 'img/triangle.png' %}" class="ui-li-icon">{% endif %}
+								{% if stop.5 = '4' %}<img src="{% static 'img/circle.png' %}" class="ui-li-icon">{% endif %}
+								{{ stop.2 }}</a></li>
+						{% endif %}
+					{% endfor %}
+				</ul>
+			</div>
+
+			<div data-role="footer" data-id="foo1" data-position="fixed">
+				<div data-role="navbar">
+					<ul>
+						<li><a href="#deerfield">Deerfield</a></li>
+						<li><a href="#broomfield">Broomfield</a></li>
+						<li><a href="#maroon">Maroon</a></li>
+					</ul>
+				</div><!-- /navbar -->
+			</div><!-- /footer -->			
+		</div>
+
+		<!-- map -->
+		<div data-role="page" id="map" data-add-back-btn="true" data-back-btn-text="Back">
+			<div data-role="header" data-theme="a" style="z-index:1;" data-position="fixed" class="ui-icon-alt">
+				<a href="#main" data-icon="home" class="ui-btn-right">Home</a>
+				<h1>Bus Times</h1>
+				<ul data-role="listview" data-theme="c" style="border-top: 1px solid black;">
+					<li>
+						<p style="padding-top:10px; padding-bottom:-10px; text-align: center;"><img src="{% static 'img/greenicon.png' %}">= Deerfield <img src="{% static 'img/blueicon.png' %}">= Broomfield
+						<img src="{% static 'img/maroonicon.png' %}">= Maroon <img src="{% static 'img/goldicon.png' %}">= Gold</p>
+					</li>
+				</ul>
+			</div>
+
+			<div data-role="content">
+				<!-- Map -->
+				<div id="mapcanvas"></div>
+			</div>
+
+		</div>
+
+		<!-- closest -->
+		<div data-role="page" id="closest" data-add-back-btn="true" data-back-btn-text="Back">
+			<div data-role="header" data-theme="a" style="z-index:999999;" data-position="fixed" class="ui-icon-alt" class="header">
+				<a href="#main" data-icon="home" class="ui-btn-right">Home</a>
+				<h1>Bus Times</h1>
+			</div>
+
+			<div data-role="content">
+				<ul data-role="listview" class="closest-stops">
+				{% for stop in data %}
+					<li data-lat="{{stop.8}}" data-long="{{stop.7}}" id="{{stop.0}}" {% if stop.6 = '2' %}data-icon="alert"{% endif %}>
+					<a {% if stop.6 = '2' %} href="#" {% else %} href="#stop{{ stop.0 }}" {% endif %} data-transition="slide">
+					{% if stop.1 = '1' %}<img src="{% static 'img/008000.png' %}" class="ui-li-icon">{% endif %}
+					{% if stop.1 = '2' %}<img src="{% static 'img/0000FF.png' %}" class="ui-li-icon">{% endif %}
+					{% if stop.1 = '3' %}<img src="{% static 'img/800000.png' %}" class="ui-li-icon">{% endif %}
+					{% if stop.1 = '4' %}<img src="{% static 'img/FFD700.png' %}" class="ui-li-icon">{% endif %}
+					{{stop.2}} 
+					<span class="ui-li-count"></span></a>
+					</li>
+				{% endfor %}
+				</ul>
+				<ul data-role="listview" class="list-sorted">
+					<li><img src="{% static 'img/alert2.png' %}" class="ui-li-icon"><span style="font-size:12px">= &nbsp;&nbsp;Upon Request</span></li>
+				</ul>
+			</div>
+		</div>
+
+
+		<!-- schedule -->
+		{% for stop in data %}
+		<div data-role="page" id="stop{{ stop.0 }}" data-add-back-btn="true" data-back-btn-text="Back">
+
+			<div data-role="header" data-theme="a" data-position="fixed" class="ui-icon-alt">
+				<a href="#main" data-icon="home" class="ui-btn-right">Home</a>
+				<h1>Bus Times</h1>
+			</div>
+			<div data-role="content">
+				<ul data-role="listview" class="stop_schedule">
+					<li data-role="list-divider">{{stop.2}}</li>
+					{% for info in stop.1 %}
+
+						{% for i in loop_time %}
+							<li class="times_{{stop.0}}" id="stop{{stop.0}}-time{{i}}">{{i}}:{{ stop.3 }} {% if i = 12 %}PM {% else %}AM {% endif %}</li>
+							{% if stop.3 > stop.4 %}
+								<li class="times_{{stop.0}}" id="stop{{stop.0}}-time{{i}}_2">{% if i = 12 %}1{% else %}{{i|add:"1"}}{% endif %}:{{ stop.4 }} {% if i|add:"1" = 12 or i|add:"1" > 12 %}PM {% else %}AM {% endif %}</li>
+							{% else %}
+								<li class="times_{{stop.0}}" id="stop{{stop.0}}-time{{i}}_2">{{i}}:{{ stop.4 }} {% if i = 12 %}PM {% else %}AM {% endif %}</li>
+							{% endif %}
+						{% endfor %}
+
+						{% for i in loop_time2 %}
+							<li class="times_{{stop.0}}" id="pm_stop{{stop.0}}-{{i}}">{{i}}:{{ stop.3 }} PM  </li>
+							{% if stop.3 > stop.4 %}
+								<li class="times_{{stop.0}}" id="pm_stop{{stop.0}}-{{i}}_2">{{i|add:"1"}}:{{ stop.4 }} PM </li>
+							{% else %}
+								<li class="times_{{stop.0}}" id="pm_stop{{stop.0}}-{{i}}_2">{{i}}:{{ stop.4 }} PM </li>
+							{% endif %}
+						{% endfor %}
+
+					{% endfor %}
+				</ul>
+			</div>	
+		</div>
+
+		{% endfor %}
+
+		<script>
+		$(function(){
+			$(window).hashchange(function() {
+				$('input[data-type="search"]').val("");
+				$('input[data-type="search"]').trigger("change");
+
+				var hash = location.hash;
+
+				var times = new Array();
+
+				var i;
+
+				for(i = 1; i < 51; i++){
+
+					times.push($(".times_" + i));
+
+					for (var j = 0; j < times[i-1].length; j++){
+
+						var a = moment(times[i-1][j].innerHTML, "h:mm:A");
+						var b = moment(a).isBefore(moment());
+
+						if (b == true){
+							$(times[i-1][j]).hide();
+						}else{
+							var t = ("(" + moment(a).fromNow() + ")");
+							$(times[i-1][j]).append("<span class='difference'>"+t+"</span>");
+							var full = $(times[i-1][j]).html();
+							var start = full.indexOf("<");
+							if (start != -1) {
+								var string = full.substring(0, start)
+								$(times[i-1][j]).text(string);
+								$(times[i-1][j]).append("<span class='difference'>"+t+"</span>");
+							}
+						}
+					}
+				}
+			});
+		});
+
+		</script>
+
+		<div data-role="page" id="add-to-home">
+			<div id="install" >
+				<div class="top">
+			        <h2><span class="bold">Install Bus Times</span></h2>
+			        <h3>Download the busing app for CMU on your iPhone today.</h3>
+		     	</div>
+		    		      
+		      	<div class="instructions">
+		        	<span class="bold"><strong>Tap the icon below to "Add to Home Screen"</strong></span>
+		       		<span class="pictos"><img src="{% static 'img/arrow.png' %}"></span>
+		     	</div>
+			</div>	
+
+		</div> 
+	</body>
+</html>
